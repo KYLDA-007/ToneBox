@@ -1,0 +1,18 @@
+.control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+.control label {
+    width: 60px;
+}
+.control input {
+    width: 250px;
+}
+#graph {
+    background-color: #111111;
+    border: 1px solid #444444;
+    max-width: 100%;
+    margin-top: 20px;
+}
