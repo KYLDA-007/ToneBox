@@ -16,3 +16,21 @@
     max-width: 100%;
     margin-top: 20px;
 }
+.field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0;
+}
+.field label {
+    width: 130px;
+}
+.field input {
+    width: 100px;
+}
+#results {
+    margin-top: 15px;
+    font-family: monospace;
+    font-size: 15px;
+    color: #00d0ff;
+}

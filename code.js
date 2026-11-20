@@ -98,9 +98,77 @@ function drawCurve() {
     }
     ctx.stroke();
 }
+const E12 = [1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2, 10];
+const E24 = [1.0, 1.1, 1.2, 1.3, 1.5, 1.6, 1.8, 2.0, 2.2, 2.4, 2.7, 3.0, 3.3,
+             3.6, 3.9, 4.3, 4.7, 5.1, 5.6, 6.2, 6.8, 7.5, 8.2, 9.1, 10];
+
+function roundToSeries(value, series) {
+    const exp = Math.floor(Math.log10(value));
+    const mantissa = value / Math.pow(10, exp);
+    let best = series[0];
+    let bestDiff = Infinity;
+    for (const s of series) {
+        const diff = Math.abs(Math.log10(mantissa / s));
+        if (diff < bestDiff) {
+            bestDiff = diff;
+            best = s;
+        }
+    }
+    return best * Math.pow(10, exp);
+}
+function formatFreq(f) {
+    if (f >= 1000) return (f / 1000).toFixed(2) + " kHz";
+    return f.toFixed(0) + " Hz";
+}
+function formatCap(c) {
+    if (c >= 1e-6) return (c * 1e6).toFixed(2) + " µF";
+    if (c >= 1e-9) return (c * 1e9).toFixed(2) + " nF";
+    return (c * 1e12).toFixed(1) + "pF";
+}
+function formatRes(r) {
+    return (r / 1000).toFixed(2) + " kΩ";
+}
+function calculateComponents() {
+    const pot = parseFloat(document.getElementById("potValue").value) * 1000;
+    const maxBoost = parseFloat(document.getElementById("maxBoost").value);
+    const bassFreq = parseFloat(document.getElementById("bassFreq").value);
+    const trebleFreq = parseFloat(document.getElementById("trebleFreq").value);
+
+    const a = dbtoGain(maxBoost);
+    const r1 = pot / (a - 1);
+    const cBass = 1 / (2 * Math.PI * bassFreq * Math.sqrt(pot * r1));
+    const cTreble = 1 / (2 * Math.PI * trebleFreq * Math.sqrt(pot * r1));
+
+    const r1Std = roundToSeries(r1, E24);
+    const cBassStd = roundToSeries(cBass, E12);
+    const cTrebleStd = roundToSeries(cTreble, E12);
+
+    const realBoost = gainToDb((pot + r1Std) / r1Std);
+    const realBass = 1 / (2 * Math.PI * cBassStd * Math.sqrt(pot * r1Std));
+    const realTreble = 1 / (2 * Math.PI * cTrebleStd * Math.sqrt(pot * r1Std));
+     
+    document.getElementById("results").innerHTML = 
+    "<b>Calculated:</b><br>" +
+    "R1 = " + formatRes(r1) + "<br>" +
+    "C bass = " + formatCap(cBass) + "<br>" +
+    "C treble = " + formatCap(cTreble) + "<br><br>" +
+    "<b>Standartn values:</b><br>" +
+    "R1 = " + formatRes(r1Std) + " (E24)<br>" +
+    "C bass = " + formatCap(cBassStd) + " (E12)<br>" +
+    "C treble = " + formatCap(cTrebleStd) + "(E12)<br><br>" + 
+    "<b>Real result:</b><br>" +
+    "Max boost = ±" + realBoost.toFixed(1) + " dB<br>" +
+    "Bass freq = " + formatFreq(realBass) + "<br>" +
+    "Treble freq = " + formatFreq(realTreble);
+}
 function update() {
     updateValues();
     drawGrid();
     drawCurve();
+    calculateComponents();
 }
 update();
+const designInputs = ["potValue", "maxBoost", "bassFreq", "trebleFreq"];
+for (const id of designInputs) {
+    document.getElementById(id).addEventListener("input", update);
+}
