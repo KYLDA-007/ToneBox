@@ -185,6 +185,50 @@ function drawSchematic(r1, cBass, cTreble, r3, potValue) {
     dot(200, 50);
     dot(320, 50);
     dot(260, 100);
+
+    wire(40, 200, 80, 200);
+    capacitor(80, 200, "C3", formatCap(cTreble));
+    wire(140, 200, 200, 200);
+    pot(200, 200, "VR2 Treble", formatRes(potValue));
+    wire(320, 200, 380, 200);
+    capacitor(380, 200, "C4", formatCap(cTreble));
+    wire(440, 200, 700, 200);
+
+    wire(40, 50, 40, 200);
+    wire(10, 125, 40, 125);
+    sctx.fillText("IN", 8, 115);
+    dot(40, 125);
+    wire(700, 50, 700, 285);
+    dot(700, 200);
+    wire(260, 100, 260, 140);
+    wire(260, 140, 300, 140);
+    resistor(300, 140, "R3", formatRes(r3));
+    wire(360, 140, 600, 140);
+    wire(600, 140, 600, 270);
+
+    wire(260, 250, 260, 270);
+    wire(260, 270, 620, 270);
+    dot(600, 270);
+
+    sctx.beginPath();
+    sctx.moveTo(620, 250);
+    sctx.lineTo(620, 320);
+    sctx.lineTo(690, 285);
+    sctx.closePath();
+    sctx.stroke();
+    sctx.fillText("-", 625, 274);
+    sctx.fillText("+", 625, 304);
+    sctx.fillText("NE5532", 625, 244);
+
+    wire(620, 300, 590, 300);
+    wire(590, 300, 590, 320);
+    wire(580, 320, 600, 320);
+    wire(584, 325, 596, 325);
+    wire(588, 330, 592, 330);
+
+    wire(690, 285, 740, 285);
+    dot(700, 285);
+    sctx.fillText("OUT", 712, 275);
 }
 function calculateComponents() {
     const pot = parseFloat(document.getElementById("potValue").value) * 1000;
