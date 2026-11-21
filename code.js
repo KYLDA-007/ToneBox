@@ -80,10 +80,28 @@ function trebleResponce(f, db) {
 }
 function boxResponce(f) {
     if (boxFc <= 0) return 1;
+    if (boxKind === "ported") return portedResponce(f);
     const x = f / boxFc;
     const num = x * x;
     const den = Math.sqrt((1 - x * x) * (1 - x * x) + (x / boxQtc) * (x / boxQtc));
     return num / den;
+}
+function portedResponce(f) {
+    const ql = 7;
+    const h = portFb / portFs;
+    const qt = portQts;
+    const sh = Math.sqrt(h);
+
+    const a1 = (ql + h * qt) / (sh * ql * qt);
+    const a2 = (h + (portAlpha + 1 + h * h) * ql * qt) / (h * ql * qt);
+    const a3 = (h * ql + qt) / (sh * ql * qt);
+
+    const w = f / Math.sqrt(portFs * portFb);
+    const w2 = w * w;
+    const re = w2 * w2 -a2 * w2 + 1;
+    const im = a3 * w -a1 * w2 * w;
+
+    return (w2 * w2) / Math.sqrt(re * re + im * im);
 }
 function plot(color, gainFn) {
     ctx.strokeStyle = color;
@@ -144,7 +162,7 @@ function formatFreq(f) {
 function formatCap(c) {
     if (c >= 1e-6) return (c * 1e6).toFixed(2) + " µF";
     if (c >= 1e-9) return (c * 1e9).toFixed(2) + " nF";
-    return (c * 1e12).toFixed(1) + "pF";
+    return (c * 1e12).toFixed(1) + " pF";
 }
 function formatRes(r) {
     return (r / 1000).toFixed(2) + " kΩ";
@@ -317,7 +335,7 @@ function calculateComponents() {
     "<b>Standard values:</b><br>" +
     "R1 = " + formatRes(r1Std) + " (E24)<br>" +
     "C bass = " + formatCap(cBassStd) + " (E12)<br>" +
-    "C treble = " + formatCap(cTrebleStd) + "(E12)<br><br>";
+    "C treble = " + formatCap(cTrebleStd) + " (E12)<br><br>";
     document.getElementById("results").innerHTML =
     (mode === "analyze" ? "" : designText) +
     "<b>Real result:</b><br>" +
@@ -347,7 +365,7 @@ function calculateComponents() {
     (2 * channels) + "x C bass " + formatCap(cBassStd) + "<br>" + 
     (2 * channels) + "x C treble " + formatCap(cTrebleStd) + "<br>" +
     "1x pot bass " + (pot / 1000) + " kΩ lin" + gang + "<br>" +
-    "1x pot treble" + (pot / 1000) + " kΩ lin" + gang + "<br><br>" +
+    "1x pot treble " + (pot / 1000) + " kΩ lin" + gang + "<br><br>" +
     "<b>Active stage:</b><br>" +
     channels + "x R3 " + formatRes(r3Std) + "<br>" +
     opamps + "x NE5532 (dual op-amp)<br>" +
@@ -356,6 +374,11 @@ function calculateComponents() {
 }
 let boxFc = 0;
 let boxQtc = 0.707;
+let boxKind = "closed";
+let portFs = 0;
+let portFb = 0;
+let portQts = 0;
+let portAlpha = 0;
 function calculatePorted(fs, qts, vas, portDiam, out) {
     boxFc = 0;
     if (!isValid([portDiam])) {
@@ -366,6 +389,13 @@ function calculatePorted(fs, qts, vas, portDiam, out) {
     const fb = 0.42 * fs * Math.pow(qts, -0.9);
     const f3 = 0.26 * fs * Math.pow(qts, -1.4);
     const portLen = (23562.5 * portDiam * portDiam) / (fb * fb * vb) - 0.732 * portDiam;
+
+    portFs = fs;
+    portFb = fb;
+    portQts = qts;
+    portAlpha = vas / vb;
+    boxKind = "ported";
+    boxFc = fb;
 
     let text = 
     "<b>Ported box:</b><br>" +
@@ -415,6 +445,7 @@ function calculateBox() {
 
     boxFc = fc;
     boxQtc = qtc;
+    boxKind = "closed";
 
     out.innerHTML = 
         "<b>Closed box:</b><br>" +
