@@ -172,6 +172,8 @@ function calculateComponents() {
 
     const channels = parseInt(document.getElementById("channels").value);
     const gang = channels > 1 ? " (" + channels + "-gang)" : "";
+    const opamps = Math.ceil(channels / 2);
+    const r3Std = roundToSeries(r1Std / 3, E24);
 
     document.getElementById("bom").innerHTML =
     "<br><b>BOM (" + channels + " ch):</b><br>" +
@@ -179,7 +181,12 @@ function calculateComponents() {
     (2 * channels) + "x C bass " + formatCap(cBassStd) + "<br>" + 
     (2 * channels) + "x C treble " + formatCap(cTrebleStd) + "<br>" +
     "1x pot bass " + (pot / 1000) + " kΩ lin" + gang + "<br>" +
-    "1x pot treble " + (pot / 1000) + " kΩ lin" + gang;
+    "1x pot treble" + (pot / 1000) + " kΩ lin" + gang + "<br><br>" +
+    "<b>Active stage:</b><br>" +
+    channels + "x R3 " + formatRes(r3Std) + "<br>" +
+    opamps + "x NE5532 (dual op-amp)<br>" +
+    (2 * channels) + "x 2.2 µF film (in/out coupling)<br>" +
+    (2 * opamps) + "x 100 nF ceramic (supply decoupling)";
 }
 function update() {
     calculateComponents();
