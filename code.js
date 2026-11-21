@@ -128,6 +128,9 @@ function formatCap(c) {
 function formatRes(r) {
     return (r / 1000).toFixed(2) + " kΩ";
 }
+function isValid(values) {
+    return values.every(v => Number.isFinite(v) && v > 0);
+}
 const schem = document.getElementById("schematic");
 const sctx = schem.getContext("2d");
 
@@ -238,6 +241,20 @@ function calculateComponents() {
     const trebleFreq = parseFloat(document.getElementById("trebleFreq").value);
     document.getElementById("designFields").style.display = mode === "analyze" ? "none" : "block";
     document.getElementById("analyzeFields").style.display = mode === "analyze" ? "block" : "none";
+    const r1In = parseFloat(document.getElementById("r1Input").value);
+    const cBassIn = parseFloat(document.getElementById("cBassInput").value);
+    const cTrebleIn = parseFloat(document.getElementById("cTrebleInput").value);
+    const channelsIn = parseInt(document.getElementById("channels").value);
+
+    const values = mode === "analyze"
+        ? [pot, r1In, cBassIn, cTrebleIn, channelsIn]
+        : [pot, maxBoost, bassFreq, trebleFreq, channelsIn];
+    if (!isValid(values)) {
+        document.getElementById("results").innerHTML =
+            "<span class='error'>Please enter positive numbers in all fields.</span>";
+        document.getElementById("bom").innerHTML = "";
+        return;
+    }
 
     const a = dbtoGain(maxBoost);
     const r1 = pot / (a - 1);
@@ -262,7 +279,7 @@ function calculateComponents() {
     curveBassFreq = realBass;
     curveTrebleFreq = realTreble;
 
-    const limit = realBoost.toFixed(1);
+    const limit = Math.floor(realBoost * 2) / 2;
     bassSlider.min = -limit;
     bassSlider.max = limit;
     trebleSlider.min = -limit;
