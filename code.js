@@ -128,6 +128,64 @@ function formatCap(c) {
 function formatRes(r) {
     return (r / 1000).toFixed(2) + " kΩ";
 }
+const schem = document.getElementById("schematic");
+const sctx = schem.getContext("2d");
+
+function wire(x1, y1, x2, y2) {
+    sctx.beginPath();
+    sctx.moveTo(x1, y1);
+    sctx.lineTo(x2, y2);
+    sctx.stroke();
+}
+function dot(x, y) {
+    sctx.beginPath();
+    sctx.arc(x, y, 3, 0, 2 * Math.PI);
+    sctx.fill();
+}
+function resistor(x, y, name, value) {
+    sctx.strokeRect(x, y - 8, 60, 16);
+    sctx.fillText(name, x + 20, y - 14);
+    sctx.fillText(value, x + 2, y + 24);
+}
+function capacitor(x, y, name, value) {
+    wire(x, y, x + 27, y);
+    wire(x + 33, y, x + 60, y);
+    wire(x + 27, y - 12, x + 27, y + 12);
+    wire(x + 33, y - 12, x + 33, y + 12);
+    sctx.fillText(name, x + 20, y - 16);
+    sctx.fillText(value, x + 2, y + 26);
+}
+function pot(x, y, name, value) {
+    sctx.strokeRect(x, y - 8, 120, 16);
+    sctx.fillText(name + " " + value, x + 20, y - 14);
+    wire(x + 60, y + 50, x + 60, y + 10);
+    wire(x + 60, y + 10, x + 55, y + 18);
+    wire(x + 60, y + 10, x + 65, y + 18);
+}
+function drawSchematic(r1, cBass, cTreble, r3, potValue) {
+    sctx.clearRect(0, 0, schem.width, schem.height);
+    sctx.strokeStyle = "#ffffff";
+    sctx.fillStyle = "#ffffff";
+    sctx.lineWidth = 2;
+    sctx.font = "12px Arial";
+
+    wire(40, 50, 80, 50);
+    resistor(80, 50, "R1", formatRes(r1));
+    wire(140, 50, 200, 50);
+    pot(200, 50, "VR1 Bass", formatRes(potValue));
+    wire(320, 50, 380, 50);
+    resistor(380, 50, "R1", formatRes(r1));
+    wire(440, 50, 700, 50);
+
+    wire(200, 50, 200, 100);
+    capacitor(200, 100, "C1", formatCap(cBass));
+    capacitor(260, 100, "C2", formatCap(cBass));
+    wire(320, 100, 320, 50);
+
+    dot(200, 50);
+    dot(320, 50);
+    dot(260, 100);
+}
 function calculateComponents() {
     const pot = parseFloat(document.getElementById("potValue").value) * 1000;
     const mode = document.getElementById("mode").value;
@@ -186,6 +244,7 @@ function calculateComponents() {
     const gang = channels > 1 ? " (" + channels + "-gang)" : "";
     const opamps = Math.ceil(channels / 2);
     const r3Std = roundToSeries(r1Std / 3, E24);
+    drawSchematic(r1Std, cBassStd, cTrebleStd, r3Std, pot);
 
     document.getElementById("bom").innerHTML =
     "<br><b>BOM (" + channels + " ch):</b><br>" +
