@@ -55,8 +55,8 @@ function drawGrid() {
         ctx.fillText(db + " dB", 3, y - 3);
     }
 }
-const BASS_FREQ = 100;
-const TREBLE_FREQ = 10000;
+let curveBassFreq = 100;
+let curveTrebleFreq = 10000;
 
 function dbtoGain(db) {
     return Math.pow(10, db / 20);
@@ -66,14 +66,14 @@ function gainToDb(gain) {
 }
 function bassResponce(f, db) {
     const a = dbtoGain(db);
-    const fc = BASS_FREQ;
+    const fc = curveBassFreq / Math.sqrt(a);
     const num = Math.sqrt(f * f + (a * fc) * (a * fc));
     const den = Math.sqrt(f * f + fc * fc);
     return num / den;
 }
 function trebleResponce(f, db) {
     const a = dbtoGain(db);
-    const fc = TREBLE_FREQ;
+    const fc = curveTrebleFreq * Math.sqrt(a);
     const num = Math.sqrt((a * f) * (a * f) + fc * fc);
     const den = Math.sqrt(f * f + fc * fc);
     return num / den;
@@ -146,13 +146,22 @@ function calculateComponents() {
     const realBoost = gainToDb((pot + r1Std) / r1Std);
     const realBass = 1 / (2 * Math.PI * cBassStd * Math.sqrt(pot * r1Std));
     const realTreble = 1 / (2 * Math.PI * cTrebleStd * Math.sqrt(pot * r1Std));
+
+    curveBassFreq = realBass;
+    curveTrebleFreq = realTreble;
+
+    const limit = realBoost.toFixed(1);
+    bassSlider.min = -limit;
+    bassSlider.max = limit;
+    trebleSlider.min = -limit;
+    trebleSlider.max = limit;
      
     document.getElementById("results").innerHTML = 
     "<b>Calculated:</b><br>" +
     "R1 = " + formatRes(r1) + "<br>" +
     "C bass = " + formatCap(cBass) + "<br>" +
     "C treble = " + formatCap(cTreble) + "<br><br>" +
-    "<b>Standartn values:</b><br>" +
+    "<b>Standard values:</b><br>" +
     "R1 = " + formatRes(r1Std) + " (E24)<br>" +
     "C bass = " + formatCap(cBassStd) + " (E12)<br>" +
     "C treble = " + formatCap(cTrebleStd) + "(E12)<br><br>" + 
@@ -160,15 +169,27 @@ function calculateComponents() {
     "Max boost = ±" + realBoost.toFixed(1) + " dB<br>" +
     "Bass freq = " + formatFreq(realBass) + "<br>" +
     "Treble freq = " + formatFreq(realTreble);
+
+    const channels = parseInt(document.getElementById("channels").value);
+    const gang = channels > 1 ? " (" + channels + "-gang)" : "";
+
+    document.getElementById("bom").innerHTML =
+    "<br><b>BOM (" + channels + " ch):</b><br>" +
+    (2 * channels) + "x R1 " + formatRes(r1Std) + "<br>" +
+    (2 * channels) + "x C bass " + formatCap(cBassStd) + "<br>" + 
+    (2 * channels) + "x C treble " + formatCap(cTrebleStd) + "<br>" +
+    "1x pot bass " + (pot / 1000) + " kΩ lin" + gang + "<br>" +
+    "1x pot treble " + (pot / 1000) + " kΩ lin" + gang;
 }
 function update() {
+    calculateComponents();
     updateValues();
     drawGrid();
     drawCurve();
-    calculateComponents();
+    
 }
 update();
-const designInputs = ["potValue", "maxBoost", "bassFreq", "trebleFreq"];
+const designInputs = ["potValue", "maxBoost", "bassFreq", "trebleFreq", "channels"];
 for (const id of designInputs) {
     document.getElementById(id).addEventListener("input", update);
 }
