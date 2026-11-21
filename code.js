@@ -16,7 +16,7 @@ const ctx = canvas.getContext("2d");
 
 const F_MIN = 20;
 const F_MAX = 20000;
-const DB_MIN = -15;
+const DB_MIN = -25;
 const DB_MAX = 15;
 
 function freqToX(f) {
@@ -78,18 +78,20 @@ function trebleResponce(f, db) {
     const den = Math.sqrt(f * f + fc * fc);
     return num / den;
 }
-function drawCurve() {
-    const bassDb = parseFloat(bassSlider.value);
-    const trebleDb = parseFloat(trebleSlider.value);
-
-    ctx.strokeStyle = "#00d0ff"
+function boxResponce(f) {
+    if (boxFc <= 0) return 1;
+    const x = f / boxFc;
+    const num = x * x;
+    const den = Math.sqrt((1 - x * x) * (1 - x * x) + (x / boxQtc) * (x / boxQtc));
+    return num / den;
+}
+function plot(color, gainFn) {
+    ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.beginPath();
-
     for (let i = 0; i <= canvas.width; i++) {
         const f = F_MIN * Math.pow(F_MAX / F_MIN, i / canvas.width);
-        const gain = bassResponce(f, bassDb) * trebleResponce(f, trebleDb);
-        const y = dbToY(gainToDb(gain));
+        const y = dbToY(gainToDb(gainFn(f)));
         if (i === 0) {
             ctx.moveTo(i, y);
         } else {
@@ -97,6 +99,25 @@ function drawCurve() {
         }
     }
     ctx.stroke();
+}
+function drawCurve() {
+    const bassDb = parseFloat(bassSlider.value);
+    const trebleDb = parseFloat(trebleSlider.value);
+    const tone = f => bassResponce(f, bassDb) * trebleResponce(f, trebleDb);
+
+    plot("#00d0ff", tone);
+
+    if (boxFc > 0) {
+         plot("#ff9900", boxResponce);
+         plot("#33ff66", f => tone(f) * boxResponce(f));
+    }
+    ctx.font = "13px Arial"
+    ctx.fillStyle = "#00d0ff";
+    ctx.fillText("Tone control", canvas.width - 120, 20);
+    ctx.fillStyle = "#ff9900";
+    ctx.fillText("Speaker box", canvas.width - 120, 38);
+    ctx.fillStyle = "#33ff66";
+    ctx.fillText("Total",canvas.width - 120, 56); 
 }
 const E12 = [1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2, 10];
 const E24 = [1.0, 1.1, 1.2, 1.3, 1.5, 1.6, 1.8, 2.0, 2.2, 2.4, 2.7, 3.0, 3.3,
@@ -363,7 +384,7 @@ function calculateBox() {
     boxQtc = qtc;
 
     out.innerHTML = 
-        "<b>Closed box:<b></br>" +
+        "<b>Closed box:</b><br>" +
         "Box volume Vb = " + vb.toFixed(1) + " L<br>" +
         "Resonance Fc = " + formatFreq(fc) + "<br>" +
         "-3 dB point F3 = " + formatFreq(f3);
@@ -374,7 +395,6 @@ function update() {
     updateValues();
     drawGrid();
     drawCurve();
-    
     
 }
 update();
