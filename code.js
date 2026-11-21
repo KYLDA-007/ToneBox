@@ -2,13 +2,17 @@ const bassSlider = document.getElementById("bass");
 const trebleSlider = document.getElementById("treble");
 const bassValue = document.getElementById("bassValue");
 const trebleValue = document.getElementById("trebleValue");
+const midSlider = document.getElementById("mid");
+const midValue = document.getElementById("midValue");
 
 function updateValues() {
     bassValue.textContent = bassSlider.value + " dB";
+    midValue.textContent = midSlider.value + " dB";
     trebleValue.textContent = trebleSlider.value + " dB";
 }
 
 bassSlider.addEventListener("input", update);
+midSlider.addEventListener("input", update);
 trebleSlider.addEventListener("input", update);
 
 const canvas = document.getElementById("graph");
@@ -57,6 +61,7 @@ function drawGrid() {
 }
 let curveBassFreq = 100;
 let curveTrebleFreq = 10000;
+let curveMidFreq = 1000;
 
 function dbtoGain(db) {
     return Math.pow(10, db / 20);
@@ -77,6 +82,14 @@ function trebleResponce(f, db) {
     const num = Math.sqrt((a * f) * (a * f) + fc * fc);
     const den = Math.sqrt(f * f + fc * fc);
     return num / den;
+}
+function midResponce(f, db) {
+    const q = 0.7;
+    const x = f / curveMidFreq;
+    const a = dbtoGain(Math.abs(db));
+    const base = (1 - x * x) * (1 - x * x);
+    const peak = Math.sqrt((base + (a * x / q) * (a * x / q)) / (base + (x / q) * (x / q)));
+    return db >= 0 ? peak : 1 / peak;
 }
 function boxResponce(f) {
     if (boxFc <= 0) return 1;
@@ -121,7 +134,8 @@ function plot(color, gainFn) {
 function drawCurve() {
     const bassDb = parseFloat(bassSlider.value);
     const trebleDb = parseFloat(trebleSlider.value);
-    const tone = f => bassResponce(f, bassDb) * trebleResponce(f, trebleDb);
+    const midDb = parseFloat(midSlider.value);
+    const tone = f => bassResponce(f, bassDb) * midResponce(f, midDb) * trebleResponce(f, trebleDb);
 
     plot("#00d0ff", tone);
 
@@ -281,6 +295,7 @@ function calculateComponents() {
     const maxBoost = parseFloat(document.getElementById("maxBoost").value);
     const bassFreq = parseFloat(document.getElementById("bassFreq").value);
     const trebleFreq = parseFloat(document.getElementById("trebleFreq").value);
+    const midFreq = parseFloat(document.getElementById("midFreq").value);
     document.getElementById("designFields").style.display = mode === "analyze" ? "none" : "block";
     document.getElementById("analyzeFields").style.display = mode === "analyze" ? "block" : "none";
     const r1In = parseFloat(document.getElementById("r1Input").value);
@@ -290,7 +305,7 @@ function calculateComponents() {
 
     const values = mode === "analyze"
         ? [pot, r1In, cBassIn, cTrebleIn, channelsIn]
-        : [pot, maxBoost, bassFreq, trebleFreq, channelsIn];
+        : [pot, maxBoost, bassFreq, midFreq, trebleFreq, channelsIn];
     if (!isValid(values)) {
         document.getElementById("results").innerHTML =
             "<span class='error'>Please enter positive numbers in all fields.</span>";
@@ -320,12 +335,15 @@ function calculateComponents() {
 
     curveBassFreq = realBass;
     curveTrebleFreq = realTreble;
+    curveMidFreq = midFreq;
 
     const limit = Math.floor(realBoost * 2) / 2;
     bassSlider.min = -limit;
     bassSlider.max = limit;
     trebleSlider.min = -limit;
     trebleSlider.max = limit;
+    midSlider.min = -limit;
+    midSlider.max = limit;
      
    const designText =
     "<b>Calculated:</b><br>" +
@@ -462,7 +480,7 @@ function update() {
     
 }
 update();
-const designInputs = ["potValue", "maxBoost", "bassFreq", "trebleFreq", "channels", "mode", "r1Input", "cBassInput", "cTrebleInput"];
+const designInputs = ["potValue", "maxBoost", "bassFreq", "midFreq", "trebleFreq", "channels", "mode", "r1Input", "cBassInput", "cTrebleInput"];
 for (const id of designInputs) {
     document.getElementById(id).addEventListener("input", update);
 }
