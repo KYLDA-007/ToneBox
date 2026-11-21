@@ -35,7 +35,7 @@ body {
 .field input {
     width: 100px;
 }
-#results, #bom {
+#results, #bom, #boxResults {
     margin-top: 15px;
     font-family: monospace;
     font-size: 15px;

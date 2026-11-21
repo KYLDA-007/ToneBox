@@ -70,6 +70,26 @@
 
         <div id="results"></div>
         <div id="bom"></div>
+        <div class="design">
+            <h2>Speaker box</h2>
+            <div class="field">
+                <label for="fs">Fs (Hz)</label>
+                <input type="number" id="fs" value="40">
+            </div>
+            <div class="field">
+                <label for="qts">Qts</label>
+                <input type="number" id="qts" value="0.4" step="0.01">
+            </div>
+            <div class="field">
+                <label for="vas">Vas (L)</label>
+                <input type="number" id="vas" value="50">
+            </div>
+            <div class="field">
+                <label for="qtc">Target Qtc</label>
+                <input type="number" id="qtc" value="0.707" step="0.01">
+            </div>
+        </div>
+        <div id="boxResults"></div>
    
     <canvas id="graph" width="800" height="400"></canvas>
     <canvas id="schematic" width="760" height="360"></canvas>

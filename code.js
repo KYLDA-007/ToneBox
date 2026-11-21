@@ -333,15 +333,56 @@ function calculateComponents() {
     (2 * channels) + "x 2.2 µF film (in/out coupling)<br>" +
     (2 * opamps) + "x 100 nF ceramic (supply decoupling)";
 }
+let boxFc = 0;
+let boxQtc = 0.707;
+
+function calculateBox() {
+    const fs = parseFloat(document.getElementById("fs").value);
+    const qts = parseFloat(document.getElementById("qts").value);
+    const vas = parseFloat(document.getElementById("vas").value);
+    const qtc = parseFloat(document.getElementById("qtc").value);
+    const out = document.getElementById("boxResults");
+
+    if (!isValid([fs, qts, vas, qtc])) {
+        out.innerHTML = "<span class='error'>Please enter positive numbers in all box fields.</span>";
+        boxFc = 0;
+        return;
+    }
+    if (qtc <= qts) {
+        out.innerHTML = "<span class='error'>Target Qtc must be higher than Qts.</span>";
+        boxFc = 0;
+        return;
+    }
+    const alpha = (qtc / qts) * (qtc / qts) - 1;
+    const vb = vas / alpha;
+    const fc = fs * qtc / qts;
+    const k = 1 / (qtc * qtc) - 2;
+    const f3 = fc * Math.sqrt((k + Math.sqrt(k * k + 4)) / 2);
+
+    boxFc = fc;
+    boxQtc = qtc;
+
+    out.innerHTML = 
+        "<b>Closed box:<b></br>" +
+        "Box volume Vb = " + vb.toFixed(1) + " L<br>" +
+        "Resonance Fc = " + formatFreq(fc) + "<br>" +
+        "-3 dB point F3 = " + formatFreq(f3);
+}
 function update() {
     calculateComponents();
+    calculateBox();
     updateValues();
     drawGrid();
     drawCurve();
+    
     
 }
 update();
 const designInputs = ["potValue", "maxBoost", "bassFreq", "trebleFreq", "channels", "mode", "r1Input", "cBassInput", "cTrebleInput"];
 for (const id of designInputs) {
+    document.getElementById(id).addEventListener("input", update);
+}
+const boxInputs = ["fs", "qts", "vas", "qtc"];
+for (const id of boxInputs) {
     document.getElementById(id).addEventListener("input", update);
 }
