@@ -356,17 +356,50 @@ function calculateComponents() {
 }
 let boxFc = 0;
 let boxQtc = 0.707;
+function calculatePorted(fs, qts, vas, portDiam, out) {
+    boxFc = 0;
+    if (!isValid([portDiam])) {
+        out.innerHTML = "<span class='error'>Please enter a positive port diameter.</span>";
+        return;
+    }
+    const vb = 15 * Math.pow(qts, 2.87) * vas;
+    const fb = 0.42 * fs * Math.pow(qts, -0.9);
+    const f3 = 0.26 * fs * Math.pow(qts, -1.4);
+    const portLen = (23562.5 * portDiam * portDiam) / (fb * fb * vb) - 0.732 * portDiam;
 
+    let text = 
+    "<b>Ported box:</b><br>" +
+    "Box volume Vb = " + vb.toFixed(1) + " L<br>" + 
+    "Tuning Fb = " + formatFreq(fb) + "<br>" + 
+    "-3 dB point F3 = " + formatFreq(f3) + "<br>" + 
+    "Port: Ø " + portDiam + " cm, length " + portLen.toFixed(1) + " cm";
+
+    if (qts > 0.5) {
+        text += "<br><span class='error'>Qts above 0.5 - this driver suits a closed box better.</span>"; 
+    }
+    if (portLen < portDiam) {
+        text += "<br><span class='error'>Port is very short - try a larger diameter.</span>";
+    }
+    out.innerHTML = text;
+}
 function calculateBox() {
     const fs = parseFloat(document.getElementById("fs").value);
     const qts = parseFloat(document.getElementById("qts").value);
     const vas = parseFloat(document.getElementById("vas").value);
     const qtc = parseFloat(document.getElementById("qtc").value);
     const out = document.getElementById("boxResults");
+    const boxType = document.getElementById("boxType").value;
+    const portDiam = parseFloat(document.getElementById("portDiam").value);
+    document.getElementById("qtcField").style.display = boxType === "ported" ? "none" : "flex";
+    document.getElementById("portField").style.display = boxType === "ported" ? "flex" : "none";
 
     if (!isValid([fs, qts, vas, qtc])) {
         out.innerHTML = "<span class='error'>Please enter positive numbers in all box fields.</span>";
         boxFc = 0;
+        return;
+    }
+    if (boxType === "ported") {
+        calculatePorted(fs, qts, vas, portDiam, out);
         return;
     }
     if (qtc <= qts) {
@@ -402,7 +435,7 @@ const designInputs = ["potValue", "maxBoost", "bassFreq", "trebleFreq", "channel
 for (const id of designInputs) {
     document.getElementById(id).addEventListener("input", update);
 }
-const boxInputs = ["fs", "qts", "vas", "qtc"];
+const boxInputs = ["fs", "qts", "vas", "qtc", "boxType", "portDiam"];
 for (const id of boxInputs) {
     document.getElementById(id).addEventListener("input", update);
 }
