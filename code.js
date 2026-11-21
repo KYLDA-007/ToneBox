@@ -130,18 +130,28 @@ function formatRes(r) {
 }
 function calculateComponents() {
     const pot = parseFloat(document.getElementById("potValue").value) * 1000;
+    const mode = document.getElementById("mode").value;
     const maxBoost = parseFloat(document.getElementById("maxBoost").value);
     const bassFreq = parseFloat(document.getElementById("bassFreq").value);
     const trebleFreq = parseFloat(document.getElementById("trebleFreq").value);
+    document.getElementById("designFields").style.display = mode === "analyze" ? "none" : "block";
+    document.getElementById("analyzeFields").style.display = mode === "analyze" ? "block" : "none";
 
     const a = dbtoGain(maxBoost);
     const r1 = pot / (a - 1);
     const cBass = 1 / (2 * Math.PI * bassFreq * Math.sqrt(pot * r1));
     const cTreble = 1 / (2 * Math.PI * trebleFreq * Math.sqrt(pot * r1));
 
-    const r1Std = roundToSeries(r1, E24);
-    const cBassStd = roundToSeries(cBass, E12);
-    const cTrebleStd = roundToSeries(cTreble, E12);
+    let r1Std, cBassStd, cTrebleStd;
+    if (mode === "analyze") {
+        r1Std = parseFloat(document.getElementById("r1Input").value) * 1000;
+        cBassStd = parseFloat(document.getElementById("cBassInput").value) * 1e-9;
+        cTrebleStd = parseFloat(document.getElementById("cTrebleInput").value) * 1e-9;
+    } else {
+        r1Std = roundToSeries(r1, E24);
+        cBassStd = roundToSeries(cBass, E12);
+        cTrebleStd = roundToSeries(cTreble, E12);
+    }
 
     const realBoost = gainToDb((pot + r1Std) / r1Std);
     const realBass = 1 / (2 * Math.PI * cBassStd * Math.sqrt(pot * r1Std));
@@ -156,7 +166,7 @@ function calculateComponents() {
     trebleSlider.min = -limit;
     trebleSlider.max = limit;
      
-    document.getElementById("results").innerHTML = 
+   const designText =
     "<b>Calculated:</b><br>" +
     "R1 = " + formatRes(r1) + "<br>" +
     "C bass = " + formatCap(cBass) + "<br>" +
@@ -164,7 +174,9 @@ function calculateComponents() {
     "<b>Standard values:</b><br>" +
     "R1 = " + formatRes(r1Std) + " (E24)<br>" +
     "C bass = " + formatCap(cBassStd) + " (E12)<br>" +
-    "C treble = " + formatCap(cTrebleStd) + "(E12)<br><br>" + 
+    "C treble = " + formatCap(cTrebleStd) + "(E12)<br><br>";
+    document.getElementById("results").innerHTML =
+    (mode === "analyze" ? "" : designText) +
     "<b>Real result:</b><br>" +
     "Max boost = ±" + realBoost.toFixed(1) + " dB<br>" +
     "Bass freq = " + formatFreq(realBass) + "<br>" +
@@ -196,7 +208,7 @@ function update() {
     
 }
 update();
-const designInputs = ["potValue", "maxBoost", "bassFreq", "trebleFreq", "channels"];
+const designInputs = ["potValue", "maxBoost", "bassFreq", "trebleFreq", "channels", "mode", "r1Input", "cBassInput", "cTrebleInput"];
 for (const id of designInputs) {
     document.getElementById(id).addEventListener("input", update);
 }
