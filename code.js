@@ -131,6 +131,9 @@ function formatRes(r) {
 function isValid(values) {
     return values.every(v => Number.isFinite(v) && v > 0);
 }
+function parallel(a, b) {
+    return (a * b) / (a + b);
+}
 const schem = document.getElementById("schematic");
 const sctx = schem.getContext("2d");
 
@@ -305,6 +308,16 @@ function calculateComponents() {
     const gang = channels > 1 ? " (" + channels + "-gang)" : "";
     const opamps = Math.ceil(channels / 2);
     const r3Std = roundToSeries(r1Std / 3, E24);
+    const xc3 = 1 / (2 * Math.PI * 20000 * cTrebleStd);
+    const zin = parallel(r1Std + r3Std, xc3);
+    const maxSource = zin / 10;
+    let zinText = "<br><br><b>Input impedance:</b><br>" +
+        "Min Zin ≈ " + formatRes(zin) + " (20 kHz, full treble boost)<br>" +
+        "Source impedance should be < " + formatRes(maxSource);
+    if (zin < 10000) {
+        zinText += "<br><span class='error'>Low input impedance - use a buffer stage before the tone control.</span>";
+    }
+    document.getElementById("results").innerHTML += zinText;
     drawSchematic(r1Std, cBassStd, cTrebleStd, r3Std, pot);
 
     document.getElementById("bom").innerHTML =
