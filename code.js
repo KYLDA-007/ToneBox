@@ -221,7 +221,7 @@ function pot(x, y, name, value) {
     wire(x + 60, y + 10, x + 55, y + 18);
     wire(x + 60, y + 10, x + 65, y + 18);
 }
-function drawSchematic(r1, cBass, cTreble, r3, potValue) {
+function drawSchematic(r1, cBass, cTreble, cMid, r3, potValue) {
     sctx.clearRect(0, 0, schem.width, schem.height);
     sctx.strokeStyle = "#ffffff";
     sctx.fillStyle = "#ffffff";
@@ -253,11 +253,11 @@ function drawSchematic(r1, cBass, cTreble, r3, potValue) {
     capacitor(380, 200, "C4", formatCap(cTreble));
     wire(440, 200, 700, 200);
 
-    wire(40, 50, 40, 200);
+    wire(40, 50, 40, 400);
     wire(10, 125, 40, 125);
     sctx.fillText("IN", 8, 115);
     dot(40, 125);
-    wire(700, 50, 700, 285);
+    wire(700, 50, 700, 400);
     dot(700, 200);
     wire(260, 100, 260, 140);
     wire(260, 140, 300, 140);
@@ -288,7 +288,40 @@ function drawSchematic(r1, cBass, cTreble, r3, potValue) {
     wire(690, 285, 740, 285);
     dot(700, 285);
     sctx.fillText("OUT", 712, 275);
-}
+
+    dot(40, 200);
+    wire(40, 400, 80, 400);
+    resistor(80, 400, "R1", formatRes(r1));
+    wire(140, 400, 200, 400);
+    pot(200, 400, "VR3 Mid", formatRes(potValue));
+    wire(320, 400, 380, 400);
+    resistor(380, 400, "R1", formatRes(r1));
+    wire(440, 400, 700, 400);
+
+    wire(260, 450, 440, 450);
+    capacitor(440, 450, "C5", formatCap(cMid));
+    resistor(500, 450, "R5", formatRes(r1));
+    wire(560, 450, 560, 270);
+    dot(560, 270);
+
+    dot(290, 450);
+    wire(290, 450, 290, 560);
+    dot(290, 500);
+    wire(290, 500, 330, 500);
+    resistor(330, 500, "R6", formatRes(r1));
+    wire(390, 500, 430, 500);
+    wire(290, 560, 330, 560);
+    capacitor(330, 560, "C6", formatCap(cMid));
+    wire(390, 560, 430, 560);
+    wire(430, 500, 430, 560);
+    dot(430, 500);
+    wire(430, 500, 470, 500);
+    wire(470, 500, 470, 515);
+    wire(460, 515, 480, 515);
+    wire(464, 520, 476, 520);
+    wire(468, 525, 472, 525);
+} 
+  
 function calculateComponents() {
     const pot = parseFloat(document.getElementById("potValue").value) * 1000;
     const mode = document.getElementById("mode").value;
@@ -383,7 +416,7 @@ function calculateComponents() {
         zinText += "<br><span class='error'>Low input impedance - use a buffer stage before the tone control.</span>";
     }
     document.getElementById("results").innerHTML += zinText;
-    drawSchematic(r1Std, cBassStd, cTrebleStd, r3Std, pot);
+    drawSchematic(r1Std, cBassStd, cTrebleStd, cMidStd, r3Std, pot);
 
     document.getElementById("bom").innerHTML =
     "<br><b>BOM (" + channels + " ch):</b><br>" +
