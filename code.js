@@ -434,6 +434,22 @@ function calculateComponents() {
     (2 * channels) + "x 2.2 µF film (in/out coupling)<br>" +
     (2 * opamps) + "x 100 nF ceramic (supply decoupling)";
 }
+function boxDimensions(vb, extraVol) {
+    const wall = parseFloat(document.getElementById("wall").value) / 10;
+    const driverVol = parseFloat(document.getElementById("driverVol").value);
+    if (!isValid([wall, driverVol])) {
+        return "<br><span class='error'>Please enter positive wall thickness and driver volume.</span>";
+    }
+    const total = vb + driverVol + extraVol;
+    const a = Math.cbrt(total) * 10;
+    const w = a;
+    const h = a * 1.618;
+    const d = a * 0.618;
+    return "<br><br><b>Box dimensions (golden ratio):</b><br>" +
+        "Internal volume = " + total.toFixed(1) + " L (incl. driver" + (extraVol > 0 ? " and port" : "") + ")<br>" +
+        "Internal W x H x D = " + w.toFixed(1) + " x " + h.toFixed(1) + " x " + d.toFixed(1) + " cm<br>" + 
+        "External W x H x D = " + (w + 2 * wall).toFixed(1) + " x " + (h + 2 * wall).toFixed(1) + " x " + (d + 2 * wall).toFixed(1) + " cm";
+}
 let boxFc = 0;
 let boxQtc = 0.707;
 let boxKind = "closed";
@@ -472,7 +488,9 @@ function calculatePorted(fs, qts, vas, portDiam, out) {
     if (portLen < portDiam) {
         text += "<br><span class='error'>Port is very short - try a larger diameter.</span>";
     }
-    out.innerHTML = text;
+    const portVol = Math.PI * (portDiam / 2) * (portDiam / 2) * Math.max(portLen, 0) / 1000;
+    text += boxDimensions(vb, portVol);
+      out.innerHTML = text;
 }
 function calculateBox() {
     const fs = parseFloat(document.getElementById("fs").value);
@@ -513,7 +531,7 @@ function calculateBox() {
         "<b>Closed box:</b><br>" +
         "Box volume Vb = " + vb.toFixed(1) + " L<br>" +
         "Resonance Fc = " + formatFreq(fc) + "<br>" +
-        "-3 dB point F3 = " + formatFreq(f3);
+        "-3 dB point F3 = " + formatFreq(f3) + boxDimensions(vb, 0);
 }
 function update() {
     calculateComponents();
@@ -528,7 +546,7 @@ const designInputs = ["potValue", "maxBoost", "bassFreq", "midFreq", "trebleFreq
 for (const id of designInputs) {
     document.getElementById(id).addEventListener("input", update);
 }
-const boxInputs = ["fs", "qts", "vas", "qtc", "boxType", "portDiam"];
+const boxInputs = ["fs", "qts", "vas", "qtc", "boxType", "portDiam", "wall", "driverVol"];
 for (const id of boxInputs) {
     document.getElementById(id).addEventListener("input", update);
 }
