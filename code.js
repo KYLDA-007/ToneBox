@@ -301,10 +301,11 @@ function calculateComponents() {
     const r1In = parseFloat(document.getElementById("r1Input").value);
     const cBassIn = parseFloat(document.getElementById("cBassInput").value);
     const cTrebleIn = parseFloat(document.getElementById("cTrebleInput").value);
+    const cMidIn = parseFloat(document.getElementById("cMidInput").value);
     const channelsIn = parseInt(document.getElementById("channels").value);
 
     const values = mode === "analyze"
-        ? [pot, r1In, cBassIn, cTrebleIn, channelsIn]
+        ? [pot, r1In, cBassIn, cMidIn, cTrebleIn, channelsIn]
         : [pot, maxBoost, bassFreq, midFreq, trebleFreq, channelsIn];
     if (!isValid(values)) {
         document.getElementById("results").innerHTML =
@@ -317,25 +318,29 @@ function calculateComponents() {
     const r1 = pot / (a - 1);
     const cBass = 1 / (2 * Math.PI * bassFreq * Math.sqrt(pot * r1));
     const cTreble = 1 / (2 * Math.PI * trebleFreq * Math.sqrt(pot * r1));
+    const cMid = 1 / (2 * Math.PI * midFreq * r1);
 
-    let r1Std, cBassStd, cTrebleStd;
+    let r1Std, cBassStd, cTrebleStd, cMidStd;
     if (mode === "analyze") {
         r1Std = parseFloat(document.getElementById("r1Input").value) * 1000;
         cBassStd = parseFloat(document.getElementById("cBassInput").value) * 1e-9;
         cTrebleStd = parseFloat(document.getElementById("cTrebleInput").value) * 1e-9;
+        cMidStd = parseFloat(document.getElementById("cMidInput").value) * 1e-9;
     } else {
         r1Std = roundToSeries(r1, E24);
         cBassStd = roundToSeries(cBass, E12);
         cTrebleStd = roundToSeries(cTreble, E12);
+        cMidStd = roundToSeries(cMid, E12);
     }
 
     const realBoost = gainToDb((pot + r1Std) / r1Std);
     const realBass = 1 / (2 * Math.PI * cBassStd * Math.sqrt(pot * r1Std));
     const realTreble = 1 / (2 * Math.PI * cTrebleStd * Math.sqrt(pot * r1Std));
+    const realMid = 1 / (2 * Math.PI * r1Std * cMidStd);
 
     curveBassFreq = realBass;
     curveTrebleFreq = realTreble;
-    curveMidFreq = midFreq;
+    curveMidFreq = realMid;
 
     const limit = Math.floor(realBoost * 2) / 2;
     bassSlider.min = -limit;
@@ -348,16 +353,19 @@ function calculateComponents() {
    const designText =
     "<b>Calculated:</b><br>" +
     "R1 = " + formatRes(r1) + "<br>" +
+    "C mid = " + formatCap(cMid) + "<br>" +
     "C bass = " + formatCap(cBass) + "<br>" +
     "C treble = " + formatCap(cTreble) + "<br><br>" +
     "<b>Standard values:</b><br>" +
     "R1 = " + formatRes(r1Std) + " (E24)<br>" +
+    "C mid = " + formatCap(cMidStd) + " (E12)<br>" + 
     "C bass = " + formatCap(cBassStd) + " (E12)<br>" +
     "C treble = " + formatCap(cTrebleStd) + " (E12)<br><br>";
     document.getElementById("results").innerHTML =
     (mode === "analyze" ? "" : designText) +
     "<b>Real result:</b><br>" +
     "Max boost = ±" + realBoost.toFixed(1) + " dB<br>" +
+    "Mid freq = " + formatFreq(realMid) + "<br>" + 
     "Bass freq = " + formatFreq(realBass) + "<br>" +
     "Treble freq = " + formatFreq(realTreble);
 
@@ -379,10 +387,13 @@ function calculateComponents() {
 
     document.getElementById("bom").innerHTML =
     "<br><b>BOM (" + channels + " ch):</b><br>" +
-    (2 * channels) + "x R1 " + formatRes(r1Std) + "<br>" +
+    (4 * channels) + "x R1 " + formatRes(r1Std) + "<br>" +
     (2 * channels) + "x C bass " + formatCap(cBassStd) + "<br>" + 
     (2 * channels) + "x C treble " + formatCap(cTrebleStd) + "<br>" +
+    (2 * channels) + "x R mid (Wien) " + formatRes(r1Std) + "<br>" +
+    (2 * channels) + "x C mid " + formatCap(cMidStd) + "<br>" + 
     "1x pot bass " + (pot / 1000) + " kΩ lin" + gang + "<br>" +
+    "1x pot mid " + (pot / 1000) + " kΩ lin" + gang + "<br>" +
     "1x pot treble " + (pot / 1000) + " kΩ lin" + gang + "<br><br>" +
     "<b>Active stage:</b><br>" +
     channels + "x R3 " + formatRes(r3Std) + "<br>" +
@@ -480,7 +491,7 @@ function update() {
     
 }
 update();
-const designInputs = ["potValue", "maxBoost", "bassFreq", "midFreq", "trebleFreq", "channels", "mode", "r1Input", "cBassInput", "cTrebleInput"];
+const designInputs = ["potValue", "maxBoost", "bassFreq", "midFreq", "trebleFreq", "channels", "mode", "r1Input", "cBassInput","cMidInput", "cTrebleInput"];
 for (const id of designInputs) {
     document.getElementById(id).addEventListener("input", update);
 }
