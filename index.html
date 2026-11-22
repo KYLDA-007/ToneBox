@@ -7,25 +7,11 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="layout">
+        <div class="column inputs">
     <h1>ToneBox</h1>
     <p>Tone control and speaker box calculator</p>
-    <div class="controls">
-            <div class="control">
-                <label for="bass">Bass</label>
-                <input type="range" id="bass" min="-12" max="12" step="0.5" value="0">
-                <span id="bassValue">0 dB</span>
-            </div>
-                <div class="control">
-                    <label for="mid">Mid</label>
-                    <input type="range" id="mid" min="-12" max="12" step="0.5" value="0">
-                    <span id="midValue">0 dB</span>
-                </div>
-         <div class="control">
-         <label for="treble">Treble</label>
-         <input type="range" id="treble" min="-12" max="12" step="0.5" value="0">
-         <span id="trebleValue">0 dB</span>
-        </div>
-    </div>
+
     <div class="design">
         <h2>Design</h2>
         <div class="field">
@@ -79,10 +65,16 @@
             <label for="channels">Channels</label>
             <input type="number" id="channels" value="2" min="1">
         </div>
+        <div class="field">
+            <label for="inputLevel">Input level (mV)</label>
+            <input type="number" id="inputLevel" value="775">
+        </div>
+        <div class="field">
+            <label for="supply">Supply (±V)</label>
+            <input type="number" id="supply" value="15">
+        </div>
     </div>
 
-        <div id="results"></div>
-        <div id="bom"></div>
         <div class="design">
             <h2>Speaker box</h2>
             <div class="field">
@@ -116,15 +108,40 @@
                 <label for="wall">Wall thickness (mm)</label>
                 <input type="number" id="wall" value="18">
             </div>
-            <div class="field">
+           <div class="field">
                 <label for="driverVol">Driver volume (L)</label>
                 <input type="number" id="driverVol" value="1" step="0.1">
+           </div>
+        </div>
+    </div>
+    <div class="column center">
+        <div class="controls">
+            <div class="control">
+                <label for="bass">Bass</label>
+                <input type="range" id="bass" min="-12" max="12" step="0.5" value="0">
+                <span id="bassValue">0 dB</span>
+            </div>
+            <div class="control">
+                <label for="mid">Mid</label>
+                <input type="range" id="mid" min="-12" max="12" step="0.5" value="0">
+                <span id="midValue">0 dB</span>
+            </div>
+            <div class="control">
+                <label for="treble">Treble</label>
+                <input type="range" id="treble" min="-12" max="12" step="0.5" value="0">
+                <span id="trebleValue">0 dB</span>
             </div>
         </div>
+        <canvas id="graph" width="800" height="400"></canvas>
+        <canvas id="schematic" width="880" height="600"></canvas>
+    </div>
+    <div class="column outputs">
+        <div id="results"></div>
+        <div id="levelResults"></div>
+        <div id="bom"></div>
         <div id="boxResults"></div>
-   
-    <canvas id="graph" width="800" height="400"></canvas>
-    <canvas id="schematic" width="760" height="600"></canvas>
+    </div>
+</div>
   <script src="code.js"></script>  
 </body>
 </html>

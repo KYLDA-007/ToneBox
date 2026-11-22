@@ -222,7 +222,9 @@ function pot(x, y, name, value) {
     wire(x + 60, y + 10, x + 65, y + 18);
 }
 function drawSchematic(r1, cBass, cTreble, cMid, r3, potValue) {
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
     sctx.clearRect(0, 0, schem.width, schem.height);
+    sctx.translate(60, 0);
     sctx.strokeStyle = "#ffffff";
     sctx.fillStyle = "#ffffff";
     sctx.lineWidth = 2;
@@ -254,8 +256,10 @@ function drawSchematic(r1, cBass, cTreble, cMid, r3, potValue) {
     wire(440, 200, 700, 200);
 
     wire(40, 50, 40, 400);
-    wire(10, 125, 40, 125);
-    sctx.fillText("IN", 8, 115);
+    wire(-55, 125, -40, 125);
+    capacitor(-40, 125, "Cin", "2.2 µF");
+    wire(20, 125, 40, 125);
+    sctx.fillText("IN", -58, 115);
     dot(40, 125);
     wire(700, 50, 700, 400);
     dot(700, 200);
@@ -277,7 +281,11 @@ function drawSchematic(r1, cBass, cTreble, cMid, r3, potValue) {
     sctx.stroke();
     sctx.fillText("-", 625, 274);
     sctx.fillText("+", 625, 304);
-    sctx.fillText("NE5532", 625, 244);
+    sctx.fillText("NE5532", 632, 290);
+    wire(655, 268, 655, 235);
+    sctx.fillText("+15V", 642, 228);
+    wire(655, 302, 655, 340);
+    sctx.fillText("-15V", 642, 354);
 
     wire(620, 300, 590, 300);
     wire(590, 300, 590, 320);
@@ -285,9 +293,11 @@ function drawSchematic(r1, cBass, cTreble, cMid, r3, potValue) {
     wire(584, 325, 596, 325);
     wire(588, 330, 592, 330);
 
-    wire(690, 285, 740, 285);
+    wire(690, 285, 720, 285);
+    capacitor(720, 285, "Cout", "2.2 µF");
+    wire(780, 285, 800, 285);
     dot(700, 285);
-    sctx.fillText("OUT", 712, 275);
+    sctx.fillText("OUT", 785, 275);
 
     dot(40, 200);
     wire(40, 400, 80, 400);
@@ -320,6 +330,18 @@ function drawSchematic(r1, cBass, cTreble, cMid, r3, potValue) {
     wire(460, 515, 480, 515);
     wire(464, 520, 476, 520);
     wire(468, 525, 472, 525);
+
+    sctx.fillText("Supply decoupling (per NE5532)", 590, 440);
+    sctx.fillText("+15V", 590, 475);
+    capacitor(630, 470, "C7", "100 nF");
+    wire(690, 470, 720, 470);
+    sctx.fillText("-15V", 590, 540);
+    capacitor(630, 535, "C8", "100 nF");
+    wire(690, 535, 720, 535);
+    wire(720, 470, 720, 570);
+    wire(710, 570, 730, 570);
+    wire(714, 575, 726, 575);
+    wire(718, 580, 722, 580);
 } 
   
 function calculateComponents() {
@@ -533,16 +555,56 @@ function calculateBox() {
         "Resonance Fc = " + formatFreq(fc) + "<br>" +
         "-3 dB point F3 = " + formatFreq(f3) + boxDimensions(vb, 0);
 }
+function calculateLevel() {
+    const vin = parseFloat(document.getElementById("inputLevel").value);
+    const supply = parseFloat(document.getElementById("supply").value);
+    const out = document.getElementById("levelResults");
+    if (!isValid([vin, supply - 2])) {
+        out.innerHTML = "<span class='error'>Please enter a positive input level and a supply above 2 V.</span>";
+        return;
+    }
+    const bassDb = parseFloat(bassSlider.value);
+    const midDb = parseFloat(midSlider.value);
+    const trebleDb = parseFloat(trebleSlider.value);
+
+    let maxGain = 0;
+    let maxFreq = F_MIN;
+    for (let i = 0; i <= 200; i++) {
+        const f = F_MIN * Math.pow(F_MAX / F_MIN, i / 200);
+        const g =bassResponce(f, bassDb) * midResponce(f, midDb) * trebleResponce(f, trebleDb);
+        if (g > maxGain) {
+            maxGain = g;
+            maxFreq = f;
+        }
+    }
+    const vout = vin * maxGain;
+    const clipRms = (supply - 2) / Math.SQRT2 * 1000;
+    const headroom = 20 * Math.log10(clipRms / vout);
+
+    let text = "<b>Signal level:</b><br>" +
+    "Input = " + vin.toFixed(0) + " mV (" + (20 * Math.log10(vin / 775)).toFixed(1) + " dBu)<br>" +
+    "Max gain = " + gainToDb(maxGain).toFixed(1) + " dB at " + formatFreq(maxFreq) + "<br>" +
+    "Max output = " + vout.toFixed(0) + " mV (" + (20 * Math.log10(vout / 775)).toFixed(1) + " dBu)<br>" +
+    "Clipping at ≈ " + clipRms.toFixed(0) + " mV RMS<br>" +
+    "Headroom = " + headroom.toFixed(1) + " dB";
+    if (headroom < 0) {
+        text += "<br><span class='error'>Output will clip - lower the input level or the boost.</span>";
+    } else if (headroom < 6) {
+        text += "<br><span class='error'>Low headroom - less than 6dB before clipping.</span>";
+    }
+    out.innerHTML = text;
+}
 function update() {
     calculateComponents();
     calculateBox();
     updateValues();
     drawGrid();
     drawCurve();
+    calculateLevel();
     
 }
 update();
-const designInputs = ["potValue", "maxBoost", "bassFreq", "midFreq", "trebleFreq", "channels", "mode", "r1Input", "cBassInput","cMidInput", "cTrebleInput"];
+const designInputs = ["potValue", "maxBoost", "bassFreq", "midFreq", "trebleFreq", "channels", "mode", "r1Input", "cBassInput","cMidInput", "cTrebleInput", "inputLevel", "supply"];
 for (const id of designInputs) {
     document.getElementById(id).addEventListener("input", update);
 }
